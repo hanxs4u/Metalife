@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <link rel="icon" href="/favicon.ico"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="theme-color" content="#4e54c8"/>
+  <meta name="description" content="년도와 이야기를 분석해서 인생그래프를 그려보세요"/>
+  <link rel="apple-touch-icon" href="/logo192.png"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <title>인생그래프 - 분석 기반</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <script defer="defer" src="/static/js/main.83003733.js"></script>
+  <link href="/static/css/main.36782c81.css" rel="stylesheet">
+  <style>
+    .analysis-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .text-input-area {
+      width: 100%;
+      min-height: 200px;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: 'Noto Sans KR', sans-serif;
+      margin-bottom: 1.5rem;
+      resize: vertical;
+    }
+    .analysis-button {
+      background-color: #4e54c8;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 5px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .analysis-result {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      display: none;
+    }
+    .example-text {
+      background-color: #f1f1f1;
+      padding: 1rem;
+      border-radius: 5px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .back-button {
+      display: inline-block;
+      margin: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #f1f1f1;
+      border-radius: 5px;
+      text-decoration: none;
+      color: #333;
+    }
+    .event-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .event-year {
+      font-weight: bold;
+      margin-right: 1rem;
+      min-width: 50px;
+    }
+    .event-description {
+      flex-grow: 1;
+    }
+    .event-emotion {
+      margin-left: 1rem;
+      width: 50px;
+      text-align: center;
+    }
+    .emotion-slider {
+      width: 100%;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-button">← 메인으로 돌아가기</a>
+  <div class="analysis-container">
+    <h1>년도와 이야기 분석으로 인생그래프 만들기</h1>
+    <p>당신의 인생 이야기를 자유롭게 작성해보세요. AI가 년도와 이야기를 분석하여 인생그래프를 자동으로 생성합니다.</p>
+    
+    <div class="example-text">
+      <p><strong>예시:</strong></p>
+      <p>2010년에 대학교에 입학했어요. 정말 기뻤습니다.</p>
+      <p>2015년에는 첫 직장에 취업했습니다. 설레는 마음으로 시작했지만 적응하는데 어려움이 있었어요.</p>
+      <p>2020년에 결혼을 했습니다. 인생의 새로운 장이 시작되었습니다.</p>
+    </div>
+    
+    <textarea class="text-input-area" id="storyInput" placeholder="여기에 당신의 인생 이야기를 자유롭게 작성해주세요..."></textarea>
+    
+    <button class="analysis-button" id="analyzeButton">이야기 분석하기</button>
+    
+    <div class="analysis-result" id="analysisResult">
+      <h3>분석 결과</h3>
+      <p>다음과 같은 인생 이벤트가 발견되었습니다. 감정 점수를 조정하고 그래프를 생성해보세요.</p>
+      
+      <div id="eventsList">
+        <!-- 분석된 이벤트가 여기에 표시됩니다 -->
+      </div>
+      
+      <button class="analysis-button" id="generateGraphButton" style="margin-top: 1.5rem;">인생그래프 생성하기</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const storyInput = document.getElementById('storyInput');
+      const analyzeButton = document.getElementById('analyzeButton');
+      const analysisResult = document.getElementById('analysisResult');
+      const eventsList = document.getElementById('eventsList');
+      const generateGraphButton = document.getElementById('generateGraphButton');
+      
+      // 이야기 분석 버튼 클릭 이벤트
+      analyzeButton.addEventListener('click', function() {
+        const story = storyInput.value.trim();
+        
+        if (story === '') {
+          alert('이야기를 입력해주세요.');
+          return;
+        }
+        
+        // 간단한 정규식으로 년도와 이야기 추출 (실제로는 더 복잡한 NLP가 필요할 수 있음)
+        const yearPattern = /\b(19|20)\d{2}\b년?/g;
+        const years = story.match(yearPattern);
+        
+        if (!years || years.length === 0) {
+          alert('이야기에서 년도를 찾을 수 없습니다. 예시와 같이 년도를 포함해주세요.');
+          return;
+        }
+        
+        // 이야기를 문장으로 분리
+        const sentences = story.split(/[.!?]\s+/);
+        const events = [];
+        
+        // 각 문장에서 년도가 포함된 이벤트 추출
+        sentences.forEach(sentence => {
+          const match = sentence.match(yearPattern);
+          if (match) {
+            const year = match[0].replace('년', '');
+            const description = sentence.replace(yearPattern, '').trim();
+            
+            // 감정 분석 (간단한 키워드 기반, 실제로는 더 복잡한 감정 분석이 필요)
+            let emotion = 0;
+            if (sentence.includes('기쁨') || sentence.includes('행복') || sentence.includes('좋았') || sentence.includes('기뻤')) {
+              emotion = 7;
+            } else if (sentence.includes('슬픔') || sentence.includes('우울') || sentence.includes('힘들') || sentence.includes('어려움')) {
+              emotion = -5;
+            } else if (sentence.includes('화') || sentence.includes('분노') || sentence.includes('짜증')) {
+              emotion = -8;
+            } else if (sentence.includes('설레') || sentence.includes('기대')) {
+              emotion = 5;
+            }
+            
+            events.push({
+              year: year,
+              description: description,
+              emotion: emotion
+            });
+          }
+        });
+        
+        // 이벤트 목록 표시
+        displayEvents(events);
+        
+        // 결과 영역 표시
+        analysisResult.style.display = 'block';
+      });
+      
+      function displayEvents(events) {
+        eventsList.innerHTML = '';
+        
+        events.forEach((event, index) => {
+          const eventItem = document.createElement('div');
+          eventItem.className = 'event-item';
+          
+          const yearElement = document.createElement('div');
+          yearElement.className = 'event-year';
+          yearElement.textContent = event.year;
+          
+          const descriptionElement = document.createElement('div');
+          descriptionElement.className = 'event-description';
+          descriptionElement.textContent = event.description;
+          
+          const emotionContainer = document.createElement('div');
+          emotionContainer.className = 'event-emotion-container';
+          
+          const emotionSlider = document.createElement('input');
+          emotionSlider.type = 'range';
+          emotionSlider.min = '-10';
+          emotionSlider.max = '10';
+          emotionSlider.value = event.emotion;
+          emotionSlider.className = 'emotion-slider';
+          emotionSlider.id = `emotion-${index}`;
+          
+          const emotionValue = document.createElement('div');
+          emotionValue.className = 'event-emotion';
+          emotionValue.textContent = event.emotion;
+          
+          emotionSlider.addEventListener('input', function() {
+            emotionValue.textContent = this.value;
+          });
+          
+          emotionContainer.appendChild(emotionSlider);
+          emotionContainer.appendChild(emotionValue);
+          
+          eventItem.appendChild(yearElement);
+          eventItem.appendChild(descriptionElement);
+          eventItem.appendChild(emotionContainer);
+          
+          eventsList.appendChild(eventItem);
+        });
+      }
+      
+      // 그래프 생성 버튼 클릭 이벤트
+      generateGraphButton.addEventListener('click', function() {
+        alert('인생그래프 생성 기능이 구현될 예정입니다.');
+        // 여기에 그래프 생성 로직 추가
+      });
+    });
+  </script>
+</body>
+</html>
