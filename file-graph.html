@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <link rel="icon" href="/favicon.ico"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="theme-color" content="#4e54c8"/>
+  <meta name="description" content="파일 기반으로 인생그래프를 만들어보세요"/>
+  <link rel="apple-touch-icon" href="/logo192.png"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <title>인생그래프 - 파일 기반</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <script defer="defer" src="/static/js/main.83003733.js"></script>
+  <link href="/static/css/main.36782c81.css" rel="stylesheet">
+  <style>
+    .file-upload-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .file-upload-area {
+      border: 2px dashed #4e54c8;
+      border-radius: 5px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .file-upload-area:hover {
+      background-color: rgba(78, 84, 200, 0.05);
+    }
+    .file-upload-button {
+      background-color: #4e54c8;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 5px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .file-format-info {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+    }
+    .back-button {
+      display: inline-block;
+      margin: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #f1f1f1;
+      border-radius: 5px;
+      text-decoration: none;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-button">← 메인으로 돌아가기</a>
+  <div class="file-upload-container">
+    <h1>파일 기반 인생그래프 만들기</h1>
+    <p>CSV 또는 텍스트 파일을 업로드하여 인생그래프를 자동으로 생성해보세요.</p>
+    
+    <div class="file-upload-area" id="dropArea">
+      <p>파일을 여기에 끌어다 놓거나</p>
+      <input type="file" id="fileInput" accept=".csv,.txt" style="display: none;">
+      <button class="file-upload-button" onclick="document.getElementById('fileInput').click()">파일 선택하기</button>
+    </div>
+    
+    <div class="file-format-info">
+      <h3>파일 형식 안내</h3>
+      <p>CSV 파일 형식: 년도,이벤트 설명,감정 점수(-10~10),색상(선택사항)</p>
+      <p>텍스트 파일 형식: 각 줄에 "년도: 이벤트 설명" 형식으로 작성해주세요.</p>
+      <p>예시:</p>
+      <pre>2010,대학교 입학,8,#4e54c8
+2015,첫 직장 취업,5,#54c86e
+2020,결혼,-2,#c85454</pre>
+    </div>
+    
+    <div id="previewArea" style="margin-top: 2rem; display: none;">
+      <h3>미리보기</h3>
+      <div id="previewContent"></div>
+      <button id="generateButton" class="file-upload-button" style="margin-top: 1rem;">인생그래프 생성하기</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const dropArea = document.getElementById('dropArea');
+      const fileInput = document.getElementById('fileInput');
+      const previewArea = document.getElementById('previewArea');
+      const previewContent = document.getElementById('previewContent');
+      const generateButton = document.getElementById('generateButton');
+      
+      // 드래그 앤 드롭 이벤트 처리
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+      
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+      });
+      
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+      });
+      
+      function highlight() {
+        dropArea.classList.add('highlight');
+      }
+      
+      function unhighlight() {
+        dropArea.classList.remove('highlight');
+      }
+      
+      dropArea.addEventListener('drop', handleDrop, false);
+      fileInput.addEventListener('change', handleFiles, false);
+      
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles({ target: { files } });
+      }
+      
+      function handleFiles(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const content = e.target.result;
+            displayPreview(content, file.name);
+          };
+          reader.readAsText(file);
+        }
+      }
+      
+      function displayPreview(content, fileName) {
+        let previewHTML = '<h4>' + fileName + '</h4>';
+        
+        if (fileName.endsWith('.csv')) {
+          const rows = content.split('\n').slice(0, 5); // 처음 5줄만 표시
+          previewHTML += '<table border="1" style="width: 100%; border-collapse: collapse;">';
+          previewHTML += '<tr><th>년도</th><th>설명</th><th>감정 점수</th><th>색상</th></tr>';
+          
+          rows.forEach(row => {
+            const cells = row.split(',');
+            if (cells.length >= 2) {
+              previewHTML += '<tr>';
+              cells.forEach(cell => {
+                previewHTML += '<td>' + cell + '</td>';
+              });
+              previewHTML += '</tr>';
+            }
+          });
+          
+          previewHTML += '</table>';
+        } else {
+          const lines = content.split('\n').slice(0, 5); // 처음 5줄만 표시
+          previewHTML += '<ul>';
+          lines.forEach(line => {
+            previewHTML += '<li>' + line + '</li>';
+          });
+          previewHTML += '</ul>';
+        }
+        
+        previewHTML += '<p>파일에서 ' + (content.split('\n').length) + '개의 항목이 발견되었습니다.</p>';
+        
+        previewContent.innerHTML = previewHTML;
+        previewArea.style.display = 'block';
+      }
+      
+      generateButton.addEventListener('click', function() {
+        alert('인생그래프 생성 기능이 구현될 예정입니다.');
+        // 여기에 그래프 생성 로직 추가
+      });
+    });
+  </script>
+</body>
+</html>
